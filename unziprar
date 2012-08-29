@@ -1,0 +1,26 @@
+#!/bin/sh
+
+TMP_DIR=$(basename $0)-$$
+
+EXTENSION=$2
+if [ "x$EXTENSION" == "x" ]; then
+    EXTENSION="mkv"
+fi
+
+pushd $PWD
+mkdir $TMP_DIR
+pushd $TMP_DIR
+
+unzip ../$1
+
+if [ $(ls *.par2 2> /dev/null | head -n1) ]; then
+    par2 r *.par2
+fi
+
+unrar e $(ls *.rar | head -n1)
+
+mv -i *.$EXTENSION ../
+
+popd
+rm -r $TMP_DIR
+popd
