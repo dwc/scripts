@@ -1,0 +1,155 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Data::Dumper;
+use Data::ICal;
+use Data::ICal::Entry::Event;
+use DateTime;
+use DateTime::Format::ICal;
+use Getopt::Long;
+use XMLTV;
+
+
+##
+## Main script
+##
+
+main();
+sub main {
+    my $name      = 'Upcoming TV Shows';
+    my $languages = [ 'en' ];
+    my $old       = 0;  # By default, don't output programs which have
+                        # previously aired
+    GetOptions('name=s' => \$name, 'language=s@' => $languages, 'old!' => \$old)
+        or die 'Invalid options';
+
+    my $listings = do { local $/; <> };
+    my ($encoding, $credits, $channels, $programs) = @{ XMLTV::parse($listings) };
+    warn "Loaded ",
+        scalar keys %{ $channels }, " channel", (scalar keys %{ $channels } == 1 ? '' : 's'),
+        " and ",
+        scalar @{ $programs }, " program", (scalar @{ $programs } == 1 ? '' : 's'),
+        "\n";
+
+    my $calendar = Data::ICal->new;
+    $calendar->add_property('X-WR-CALNAME' => $name);
+
+    my $time_zone = DateTime::TimeZone->new(name => 'local');
+
+    foreach my $program (@{ $programs }) {
+        my $start = inflate_date($program->{start});
+        my $stop  = inflate_date($program->{stop});
+        my $aired = inflate_date($program->{date});
+
+        next if not $old and is_old_program($program);
+
+        my $event = Data::ICal::Entry::Event->new;
+        $event->add_properties(
+            summary     => get_title($program, $languages),
+            description => get_description($program, $languages),
+            location    => get_channel($program, $channels),
+            dtstart     => deflate_date($start),
+            dtend       => deflate_date($stop),
+        );
+
+        $calendar->add_entry($event);
+    }
+
+    print $calendar->as_string;
+}
+
+
+##
+## Subroutines
+##
+
+sub inflate_date {
+    my ($date, $time_zone) = @_;
+
+    return unless $date;
+
+    my $dt;
+    if ($date =~ /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s+([-+]\d{4})/) {  # Example: 20051024180000 -0400
+        $dt = DateTime->new(
+            year      => $1,
+            month     => $2,
+            day       => $3,
+            hour      => $4,
+            minute    => $5,
+            second    => $6,
+            time_zone => $7,
+        );
+    }
+    elsif ($date =~ /(\d{4})-?(\d{2})-?(\d{2})/) {
+        $dt = DateTime->new(
+            year  => $1,
+            month => $2,
+            day   => $3,
+        );
+    }
+    elsif ($date =~ /(\d{4})/) {
+        $dt = DateTime->new(
+            year => $1,
+        );
+    }
+    else {
+        warn "Invalid date [$date]";
+    }
+
+    return $dt;
+}
+
+sub deflate_date {
+    my ($dt) = @_;
+
+    my $date = DateTime::Format::ICal->format_datetime($dt);
+    if (length $date == 9) {
+        # Work around incompatibility between DateTime::Format::ICal and Apple iCal
+        $date = substr($date, 0, 8) . 'T000000Z';
+    }
+
+    return $date;
+}
+
+sub is_old_program {
+    my ($program) = @_;
+
+    return exists $program->{'previously-shown'};
+}
+
+sub get_channel {
+    my ($program, $channels) = @_;
+
+    my $channel = $program->{channel};
+    if (exists $channels->{$program->{channel}}) {
+        $channel = $channels->{$program->{channel}}->{'display-name'}->[0];
+    }
+
+    return $channel;
+}
+
+sub get_title {
+    my ($program, $languages) = @_;
+
+    my $titles    = XMLTV::best_name($languages, $program->{title});
+    my $subtitles = XMLTV::best_name($languages, $program->{'sub-title'});
+
+    my @parts = ($titles->[0]);
+    push @parts, $subtitles->[0] if $subtitles;
+
+    return join ' - ', @parts;
+}
+
+sub get_description {
+    my ($program, $languages) = @_;
+
+    my $descriptions = XMLTV::best_name($languages, $program->{desc});
+
+    my $description = $descriptions->[0];
+    if (exists $program->{date}) {
+        $description .= ' Originally aired on ' . $program->{date} . '.';
+    }
+
+    return $description;
+}
