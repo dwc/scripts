@@ -1,3 +1,5 @@
 #!/bin/sh
 
-tv_grab_na_dd --days 14 | tv_sort > $HOME/.xmltv/listings.xml
+FILENAME="${HOME}/.xmltv/listings.xml"
+
+tv_grab_na_dd --days 14 > "${FILENAME}.tmp" && tv_sort < "${FILENAME}.tmp" > "${FILENAME}"
