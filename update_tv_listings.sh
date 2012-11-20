@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 FILENAME="${HOME}/.xmltv/listings.xml"
 
