@@ -17,8 +17,6 @@ tv_grep \
 	--or --title "^Bones$" \
 		--and --channel "I10387\.labs\.zap2it\.com" \
 	--or --title "^Breaking\s+Bad$" \
-	--or --title "^Californication$" \
-		--and --channel "I11117\.labs\.zap2it\.com" \
 	--or --title "^Dexter$" \
 		--and --channel "I11117\.labs\.zap2it\.com" \
 	--or --title "^Fringe$" \
