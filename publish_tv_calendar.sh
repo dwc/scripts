@@ -9,18 +9,12 @@ HOST=files.danieltwc.com
 DIRECTORY=files.danieltwc.com/
 
 tv_grep \
-	--title "^30\s+Rock$" \
-		--and --channel "I10518\.labs\.zap2it\.com" \
 	--or --title "^Boardwalk\s+Empire$" \
 		--and --channel "I10240\.labs\.zap2it\.com" \
 	--or --title "^Bored\s+to\s+Death$" \
-	--or --title "^Bones$" \
-		--and --channel "I10387\.labs\.zap2it\.com" \
 	--or --title "^Breaking\s+Bad$" \
 	--or --title "^Dexter$" \
 		--and --channel "I11117\.labs\.zap2it\.com" \
-	--or --title "^Fringe$" \
-		--and --channel "I10387\.labs\.zap2it\.com" \
 	--or --title "^How\s+I\s+Met\s+Your\s+Mother$" \
 		--and --channel "I10520\.labs\.zap2it\.com" \
 	--or --title "^Lie\s+to\s+Me$" \
